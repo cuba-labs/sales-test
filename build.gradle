@@ -119,6 +119,19 @@ configure(coreModule) {
         dbUser = 'sa'
         dbPassword = ''
     }
+
+    task startTestDb(type: CubaHsqlStart) {
+        dbPort = 9002 // should be different from the default port 9001 used by Studio HSQLDB server
+        dbName = 'sales_test'
+    }
+
+    task createTestDb(dependsOn: assemble, description: 'Creates local HSQL database for tests', type: CubaDbCreation) {
+        dbms = 'hsql'
+        host = 'localhost:9002'
+        dbName = 'sales_test'
+        dbUser = 'sa'
+        dbPassword = ''
+    }
 }
 
 configure(guiModule) {
@@ -142,7 +155,9 @@ configure(webModule) {
     dependencies {
         provided(servletApi)
         compile(guiModule)
-
+        testCompile(group: 'com.jayway.jsonpath', name: 'json-path', version: '2.4.0')
+        testCompile(group: 'org.seleniumhq.selenium', name: 'selenium-java', version: '3.5.2')
+        testCompile(group: 'com.codeborne', name: 'selenide', version: '4.5.1')
     }
     
     task webArchive(type: Zip) {
@@ -180,6 +195,11 @@ configure(webModule) {
     task deploy(dependsOn: [assemble, cleanConf], type: CubaDeployment) {
         appName = 'app'
         appJars('app-global', 'app-gui', 'app-web')
+    }
+
+    task testUi(type: Test, dependsOn: testClasses) {
+        include('**/*UiTest.class')
+        systemProperties = System.getProperties()
     }
 }
 
